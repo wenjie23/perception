@@ -103,7 +103,8 @@ class WebcamSensor(CameraSensor):
         :obj:`tuple` of :obj:`ColorImage`, :obj:`DepthImage`, :obj:`IrImage`, :obj:`numpy.ndarray`
             The ColorImage, DepthImage, and IrImage of the current frame.
         """
-        ret, frame = self._cap.read()
+        for i in range(5):
+            ret, frame = self._cap.read()
         rgb_data = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         return ColorImage(rgb_data, frame=self._frame), None, None
