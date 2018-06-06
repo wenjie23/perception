@@ -1243,7 +1243,7 @@ class ColorImage(Image):
 
         # generate histograms for each channel
         bounds = (0, np.iinfo(np.uint8).max + 1)
-        num_bins = bounds[1] / scale
+        num_bins = int(bounds[1] / scale)
         r_hist, _ = np.histogram(r_data, bins=num_bins, range=bounds)
         g_hist, _ = np.histogram(g_data, bins=num_bins, range=bounds)
         b_hist, _ = np.histogram(b_data, bins=num_bins, range=bounds)
