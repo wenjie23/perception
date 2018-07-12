@@ -3413,6 +3413,25 @@ class PointCloudImage(Image):
                 3).T,
             frame=self._frame)
     
+    def average_normal_cloud_im(self,kernel_size):
+        """Gnerate a average NormalCloudImage from the PointCloudImage.
+        Returns
+        -------
+        :obj:`NormalCloudImage`
+            The corresponding NormalCloudImage.
+        """
+        kernel = np.ones((kernel_size,kernel_size))/(kernel_size**2)
+        gx, gy, _ = np.gradient(self.data)
+        gx_data = gx.reshape(self.height * self.width, 3)
+        gy_data = gy.reshape(self.height * self.width, 3)
+        gx_data[:,:,2] = ssg.convolve2d(gx_data[:,:,2],kernel,mode='same')
+        gy_data[:,:,2] = ssg.convolve2d(gy_data[:,:,2],kernel,mode='same')
+        pc_grads = np.cross(gx_data, gy_data)  # default to point toward camera
+        pc_grad_norms = np.linalg.norm(pc_grads, axis=1)
+        pc_grads[pc_grad_norms > 0] = pc_grads[pc_grad_norms > 0] / np.tile(pc_grad_norms[pc_grad_norms > 0, np.newaxis], [1, 3])
+        normal_im_data = pc_grads.reshape(self.height, self.width, 3)
+        return NormalCloudImage(normal_im_data, frame=self.frame)
+
     def normal_cloud_im(self):
         """Generate a NormalCloudImage from the PointCloudImage.
 
