@@ -3413,23 +3413,33 @@ class PointCloudImage(Image):
                 3).T,
             frame=self._frame)
     
-    def average_normal_cloud_im(self,kernel_size):
-        """Gnerate a average NormalCloudImage from the PointCloudImage.
+    def median_normal_cloud_im(self,kernel_size):
+        """Gnerate a median NormalCloudImage from the PointCloudImage.
         Returns
         -------
         :obj:`NormalCloudImage`
             The corresponding NormalCloudImage.
         """
-        kernel = np.ones((kernel_size,kernel_size))/(kernel_size**2)
-        gx, gy, _ = np.gradient(self.data)
-        gx_data = gx.reshape(self.height * self.width, 3)
-        gy_data = gy.reshape(self.height * self.width, 3)
-        gx_data[:,:,2] = ssg.convolve2d(gx_data[:,:,2],kernel,mode='same')
-        gy_data[:,:,2] = ssg.convolve2d(gy_data[:,:,2],kernel,mode='same')
-        pc_grads = np.cross(gx_data, gy_data)  # default to point toward camera
+        normal_cloud_im = self.normal_cloud_im()
+        data = normal_cloud_im.data
+        # normalize data
+        min_v = np.amin(data)
+        max_v = np.amax(data)-min_v
+        data -= min_v
+        data /= float(max_v)
+        #convert data to int 0~255
+        cvted = np.uint8(np.multiply(data,255))
+        # median calculation
+        median = cv2.medianBlur(cvted,kernel_size)
+        # backward normalization
+        median = np.multiply(median,1/255.0)
+        median *= max_v
+        median += min_v
+        pc_grads = median.reshape(self.height*self.width, 3)
         pc_grad_norms = np.linalg.norm(pc_grads, axis=1)
         pc_grads[pc_grad_norms > 0] = pc_grads[pc_grad_norms > 0] / np.tile(pc_grad_norms[pc_grad_norms > 0, np.newaxis], [1, 3])
         normal_im_data = pc_grads.reshape(self.height, self.width, 3)
+
         return NormalCloudImage(normal_im_data, frame=self.frame)
 
     def normal_cloud_im(self):
